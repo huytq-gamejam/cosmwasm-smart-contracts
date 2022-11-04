@@ -1,5 +1,4 @@
-use crate::helpers::AirdropCampaign;
-use crate::helpers::Asset;
+use crate::helpers::{AirdropCampaign, Asset};
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
 #[cw_serde]

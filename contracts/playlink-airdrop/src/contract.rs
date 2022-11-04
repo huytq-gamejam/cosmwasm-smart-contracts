@@ -117,6 +117,7 @@ pub mod execute {
         // Check payment
         let airdrop_fee = estimate_airdrop_fee(deps.as_ref(), assets.len() as u64)?;
         let mut payment = 0;
+        let mut messages: Vec<SubMsg> = vec![];
         match info
             .funds
             .iter()
@@ -132,10 +133,10 @@ pub mod execute {
             });
         } else {
             // Return excess
-            BankMsg::Send {
+            messages.push(SubMsg::new(BankMsg::Send {
                 to_address: info.sender.clone().into(),
                 amount: coins(payment - airdrop_fee, NATIVE_DENOM),
-            };
+            }));
         }
 
         // Validate data
@@ -176,7 +177,9 @@ pub mod execute {
             },
         )?;
 
-        Ok(Response::new().add_attribute("action", "create_airdrop_campaign"))
+        Ok(Response::new()
+            .add_attribute("action", "create_airdrop_campaign")
+            .add_submessages(messages))
     }
 
     pub fn update_campaign(

@@ -222,7 +222,7 @@ mod tests {
                         starting_time: campaign_starting_time,
                     },
                     &[Coin {
-                        amount: Uint128::from(1_u128),
+                        amount: Uint128::from(20_u128),
                         denom: String::from(NATIVE_DENOM),
                     }],
                 )
@@ -290,7 +290,7 @@ mod tests {
                         starting_time: campaign_starting_time,
                     },
                     &[Coin {
-                        amount: Uint128::from(10_u128),
+                        amount: Uint128::from(25_u128),
                         denom: String::from(NATIVE_DENOM),
                     }],
                 )
