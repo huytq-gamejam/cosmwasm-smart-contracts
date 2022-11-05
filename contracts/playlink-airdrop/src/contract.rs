@@ -27,6 +27,11 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, PlaylinkAirdropErr> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    if msg.max_batch_size == 0 {
+        return Err(PlaylinkAirdropErr::InvalidMaxBatchSize {
+            size: msg.max_batch_size,
+        });
+    }
     let airdrop_platform = AirdropPlatform {
         admin: info.sender.clone(),
         max_match_size: msg.max_batch_size,
@@ -53,6 +58,10 @@ pub fn execute(
             operators,
             is_operators,
         } => execute::set_operators(deps, info, operators, is_operators),
+        ExecuteMsg::SetMaxBatchSize { new_size } => {
+            execute::set_max_batch_size(deps, info, new_size)
+        }
+        ExecuteMsg::SetFeePerBatch { new_fee } => execute::set_fee_per_batch(deps, info, new_fee),
         ExecuteMsg::CreateAirdropCampaign {
             campaign_id,
             assets,
@@ -99,6 +108,49 @@ pub mod execute {
             }
         }
         Ok(Response::new().add_attribute("action", "set_operators"))
+    }
+
+    pub fn set_max_batch_size(
+        deps: DepsMut,
+        info: MessageInfo,
+        new_size: u64,
+    ) -> Result<Response, PlaylinkAirdropErr> {
+        if !OPERATORS.load(deps.storage, info.sender.clone())? {
+            return Err(PlaylinkAirdropErr::NotOperator {
+                account: info.sender.into(),
+            });
+        }
+        if new_size == 0 {
+            return Err(PlaylinkAirdropErr::InvalidMaxBatchSize { size: new_size });
+        }
+        AIRDROP_PLATFORM.update(
+            deps.storage,
+            |mut platform| -> Result<_, PlaylinkAirdropErr> {
+                platform.max_match_size = new_size;
+                Ok(platform)
+            },
+        )?;
+        Ok(Response::new().add_attribute("action", "set_max_batch_size"))
+    }
+
+    pub fn set_fee_per_batch(
+        deps: DepsMut,
+        info: MessageInfo,
+        new_fee: u128,
+    ) -> Result<Response, PlaylinkAirdropErr> {
+        if !OPERATORS.load(deps.storage, info.sender.clone())? {
+            return Err(PlaylinkAirdropErr::NotOperator {
+                account: info.sender.into(),
+            });
+        }
+        AIRDROP_PLATFORM.update(
+            deps.storage,
+            |mut platform| -> Result<_, PlaylinkAirdropErr> {
+                platform.fee_per_batch = new_fee;
+                Ok(platform)
+            },
+        )?;
+        Ok(Response::new().add_attribute("action", "set_fee_per_batch"))
     }
 
     pub fn create_airdrop_campaign(
@@ -292,7 +344,7 @@ pub mod execute {
         recipients: Vec<String>,
     ) -> Result<Response, PlaylinkAirdropErr> {
         // Only operators can airdrop
-        if !OPERATORS.has(deps.storage, info.sender.clone()) {
+        if !OPERATORS.load(deps.storage, info.sender.clone())? {
             return Err(PlaylinkAirdropErr::NotOperator {
                 account: info.sender.into(),
             });

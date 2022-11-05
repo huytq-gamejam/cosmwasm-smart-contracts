@@ -55,4 +55,7 @@ pub enum PlaylinkAirdropErr {
 
     #[error("PlaylinkAirdrop: index out of bound ({index:?})")]
     IndexOutOfBound { index: u64 },
+
+    #[error("PlaylinkAirdrop: batch size ({size:?}) must be greater than zero")]
+    InvalidMaxBatchSize { size: u64 },
 }

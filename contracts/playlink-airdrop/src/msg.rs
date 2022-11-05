@@ -13,6 +13,12 @@ pub enum ExecuteMsg {
         operators: Vec<String>,
         is_operators: Vec<bool>,
     },
+    SetMaxBatchSize {
+        new_size: u64,
+    },
+    SetFeePerBatch {
+        new_fee: u128,
+    },
     CreateAirdropCampaign {
         campaign_id: String,
         assets: Vec<Asset>,

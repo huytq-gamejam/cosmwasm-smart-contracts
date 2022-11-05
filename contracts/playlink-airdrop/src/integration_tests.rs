@@ -107,8 +107,8 @@ mod tests {
                 airdrop_id,
                 Addr::unchecked(ADMIN),
                 &crate::msg::InstantiateMsg {
-                    max_batch_size: 3,
-                    fee_per_batch: 1,
+                    max_batch_size: 7,
+                    fee_per_batch: 3,
                 },
                 &[],
                 "playlink_airdrop",
@@ -187,6 +187,26 @@ mod tests {
                         operators: vec![String::from(Addr::unchecked(OPERATOR))],
                         is_operators: vec![true],
                     },
+                    &[],
+                )
+                .unwrap();
+
+            /* ================= Update max batch size ================= */
+            blockchain
+                .execute_contract(
+                    Addr::unchecked(OPERATOR),
+                    airdrop_address.clone(),
+                    &ExecuteMsg::SetMaxBatchSize { new_size: 3 },
+                    &[],
+                )
+                .unwrap();
+
+            /* ================= Update fee per batch ================= */
+            blockchain
+                .execute_contract(
+                    Addr::unchecked(OPERATOR),
+                    airdrop_address.clone(),
+                    &ExecuteMsg::SetFeePerBatch { new_fee: 1 },
                     &[],
                 )
                 .unwrap();
