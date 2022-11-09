@@ -306,6 +306,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw1155-token"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw1155",
+ "cw1155-base",
+ "cw2 0.16.0",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cw2"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -363,6 +380,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "cw20-token"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw20-base",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
 name = "cw721"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -387,6 +420,22 @@ dependencies = [
  "cw-utils 0.16.0",
  "cw2 0.16.0",
  "cw721",
+ "schemars",
+ "serde",
+ "thiserror",
+]
+
+[[package]]
+name = "cw721-token"
+version = "0.1.0"
+dependencies = [
+ "cosmwasm-schema",
+ "cosmwasm-std",
+ "cosmwasm-storage",
+ "cw-multi-test",
+ "cw-storage-plus 0.16.0",
+ "cw2 0.16.0",
+ "cw721-base",
  "schemars",
  "serde",
  "thiserror",

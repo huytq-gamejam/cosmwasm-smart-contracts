@@ -11,7 +11,12 @@ dotenv.config();
 
 const MNEMONIC = process.env.MNEMONIC;
 
-export const baseDeploy = async (contractName: string, initParams: JsonObject, network: string) => {
+export type ContractInfo = {
+  contractName: string,
+  initParams: JsonObject;
+};
+
+export const baseDeploy = async (infos: ContractInfo[], network: string) => {
 
   // Validate network
   let networkConfig = NETWORKS.find(n => n.name === network);
@@ -28,11 +33,6 @@ export const baseDeploy = async (contractName: string, initParams: JsonObject, n
       --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \\
       cosmwasm/rust-optimizer-arm64:0.12.8`
   ).toString();
-  let wasmPath = `artifacts/${contractName}-aarch64.wasm`;
-  if (!fs.existsSync(wasmPath)) {
-    console.error(`Unknown contract: ${contractName}`);
-    return;
-  }
 
   // Prepare deployer account
   let [account, client] = await initialize(networkConfig).setup(MNEMONIC);
@@ -40,25 +40,37 @@ export const baseDeploy = async (contractName: string, initParams: JsonObject, n
   console.log(`Deployer: ${account}`);
   console.log(`Balance: ${balance.amount}${balance.denom}`);
 
-  // Upload wasm binary
-  let wasm = fs.readFileSync(wasmPath);
-  let uploadFee = calculateFee(networkConfig.fees.upload, networkConfig.gasPrice);
-  let uploadResult = await client.upload(account, wasm, uploadFee);
-  console.log(`Code ID: ${uploadResult.codeId}`);
+  for (const contractInfo of infos) {
+    const contractName = contractInfo.contractName;
+    const initParams = contractInfo.initParams;
 
-  // Instantiate contract
-  let instantiateResponse = await client.instantiate(
-    account,
-    uploadResult.codeId,
-    initParams,
-    contractName,
-    calculateFee(networkConfig.fees.init, networkConfig.gasPrice)
-  );
-  console.log(`Contract address: ${instantiateResponse.contractAddress}`);
+    let wasmPath = `artifacts/${contractName}-aarch64.wasm`;
+    if (!fs.existsSync(wasmPath)) {
+      console.error(`Unknown contract: ${contractName}`);
+      continue;
+    }
 
-  // Save the contract address for later use
-  if (!contractAddresses[network])
-    contractAddresses[network] = {};
-  contractAddresses[network][contractName] = instantiateResponse.contractAddress;
-  fs.writeFileSync("contract-addresses.json", JSON.stringify(contractAddresses, null, "\t"));
+    // Upload wasm binary
+    let wasm = fs.readFileSync(wasmPath);
+    let uploadFee = calculateFee(networkConfig.fees.upload, networkConfig.gasPrice);
+    let uploadResult = await client.upload(account, wasm, uploadFee);
+    console.log(`${contractName} code ID: ${uploadResult.codeId}`);
+
+    // Instantiate contract
+    let instantiateResponse = await client.instantiate(
+      account,
+      uploadResult.codeId,
+      initParams,
+      contractName,
+      calculateFee(networkConfig.fees.init, networkConfig.gasPrice)
+    );
+    console.log(`${contractName}: ${instantiateResponse.contractAddress}`);
+
+    // Save the contract address for later use
+    if (!contractAddresses[network])
+      contractAddresses[network] = {};
+    contractAddresses[network][contractName] = instantiateResponse.contractAddress;
+    fs.writeFileSync("contract-addresses.json", JSON.stringify(contractAddresses, null, "\t"));
+    console.log("Finish!");
+  }
 };
