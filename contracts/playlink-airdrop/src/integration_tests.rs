@@ -4,7 +4,7 @@ mod tests {
         helpers::{AirdropCampaign, Asset, AssetType, NATIVE_DENOM},
         msg::{ExecuteMsg, QueryMsg},
     };
-    use cosmwasm_std::{coins, Addr, BlockInfo, Coin, Empty, Timestamp, Uint128};
+    use cosmwasm_std::{coins, Addr, BlockInfo, Coin, Empty, Timestamp, Uint128, Uint64};
     use cw_multi_test::{App, AppBuilder, ContractWrapper, Executor};
 
     const ADMIN: &str = "cosmos10w2pwzxaacsj508ma5ruz5wnhn83tld73shr4a";
@@ -107,8 +107,8 @@ mod tests {
                 airdrop_id,
                 Addr::unchecked(ADMIN),
                 &crate::msg::InstantiateMsg {
-                    max_batch_size: 7,
-                    fee_per_batch: 3,
+                    max_batch_size: Uint64::from(7_u64),
+                    fee_per_batch: Uint128::from(3_u128),
                 },
                 &[],
                 "playlink_airdrop",
@@ -196,7 +196,9 @@ mod tests {
                 .execute_contract(
                     Addr::unchecked(OPERATOR),
                     airdrop_address.clone(),
-                    &ExecuteMsg::SetMaxBatchSize { new_size: 3 },
+                    &ExecuteMsg::SetMaxBatchSize {
+                        new_size: Uint64::from(3_u64),
+                    },
                     &[],
                 )
                 .unwrap();
@@ -206,13 +208,16 @@ mod tests {
                 .execute_contract(
                     Addr::unchecked(OPERATOR),
                     airdrop_address.clone(),
-                    &ExecuteMsg::SetFeePerBatch { new_fee: 1 },
+                    &ExecuteMsg::SetFeePerBatch {
+                        new_fee: Uint128::one(),
+                    },
                     &[],
                 )
                 .unwrap();
 
             /* ================= Create a new campaign ================= */
-            let mut campaign_starting_time = blockchain.block_info().time.seconds() + 20 * 60; // This campaign will start 20 minute later
+            let mut campaign_starting_time =
+                Uint64::from(blockchain.block_info().time.seconds() + 20 * 60); // This campaign will start 20 minute later
             blockchain
                 .execute_contract(
                     Addr::unchecked(CAMPAIGN_CREATOR),
@@ -224,19 +229,19 @@ mod tests {
                                 asset_type: AssetType::CW20,
                                 asset_address: cw20_address.clone(),
                                 asset_id: String::from(""),
-                                available_amount: 100,
+                                available_amount: Uint128::from(100_u128),
                             },
                             Asset {
                                 asset_type: AssetType::CW20,
                                 asset_address: cw20_address.clone(),
                                 asset_id: String::from(""),
-                                available_amount: 150,
+                                available_amount: Uint128::from(150_u128),
                             },
                             Asset {
                                 asset_type: AssetType::CW721,
                                 asset_address: cw721_address.clone(),
                                 asset_id: String::from("1234"),
-                                available_amount: 1,
+                                available_amount: Uint128::one(),
                             },
                         ],
                         starting_time: campaign_starting_time,
@@ -262,13 +267,13 @@ mod tests {
             assert_eq!(campaign.assets.len(), 3);
             assert_eq!(campaign.assets.get(0).unwrap().asset_address, cw20_address);
             assert_eq!(campaign.assets.get(2).unwrap().asset_address, cw721_address);
-            assert_eq!(campaign.max_batch_size, 3);
+            assert_eq!(campaign.max_batch_size.u64(), 3);
             assert_eq!(campaign.starting_time, campaign_starting_time);
-            assert_eq!(campaign.total_available_assets, 251);
-            assert_eq!(campaign.airdrop_fee, 1);
+            assert_eq!(campaign.total_available_assets.u128(), 251);
+            assert_eq!(campaign.airdrop_fee.u128(), 1);
 
             /* ================= Update this campaign ================= */
-            campaign_starting_time = blockchain.block_info().time.seconds() + 8 * 60; // This campaign will start 8 minute later
+            campaign_starting_time = Uint64::from(blockchain.block_info().time.seconds() + 8 * 60); // This campaign will start 8 minute later
             blockchain
                 .execute_contract(
                     Addr::unchecked(CAMPAIGN_CREATOR),
@@ -280,31 +285,31 @@ mod tests {
                                 asset_type: AssetType::CW721,
                                 asset_address: cw721_address.clone(),
                                 asset_id: String::from("9999"),
-                                available_amount: 1,
+                                available_amount: Uint128::one(),
                             },
                             Asset {
                                 asset_type: AssetType::CW20,
                                 asset_address: cw20_address.clone(),
                                 asset_id: String::from(""),
-                                available_amount: 180,
+                                available_amount: Uint128::from(180_u128),
                             },
                             Asset {
                                 asset_type: AssetType::CW20,
                                 asset_address: cw20_address.clone(),
                                 asset_id: String::from(""),
-                                available_amount: 100,
+                                available_amount: Uint128::from(100_u128),
                             },
                             Asset {
                                 asset_type: AssetType::CW721,
                                 asset_address: cw721_address.clone(),
                                 asset_id: String::from("8888"),
-                                available_amount: 1,
+                                available_amount: Uint128::one(),
                             },
                             Asset {
                                 asset_type: AssetType::CW1155,
                                 asset_address: cw1155_address.clone(),
                                 asset_id: String::from("1234"),
-                                available_amount: 15,
+                                available_amount: Uint128::from(15_u128),
                             },
                         ],
                         starting_time: campaign_starting_time,
@@ -330,10 +335,10 @@ mod tests {
             assert_eq!(campaign.assets.len(), 5);
             assert_eq!(campaign.assets.get(0).unwrap().asset_address, cw721_address);
             assert_eq!(campaign.assets.get(2).unwrap().asset_address, cw20_address);
-            assert_eq!(campaign.max_batch_size, 3);
+            assert_eq!(campaign.max_batch_size.u64(), 3);
             assert_eq!(campaign.starting_time, campaign_starting_time);
-            assert_eq!(campaign.total_available_assets, 297);
-            assert_eq!(campaign.airdrop_fee, 2);
+            assert_eq!(campaign.total_available_assets.u128(), 297);
+            assert_eq!(campaign.airdrop_fee.u128(), 2);
 
             /* ================= Approve assets ================= */
             blockchain
@@ -408,7 +413,7 @@ mod tests {
                     airdrop_address.clone(),
                     &ExecuteMsg::Airdrop {
                         campaign_id: String::from(CAMPAIGN_ID),
-                        asset_indexes: vec![1, 2],
+                        asset_indexes: vec![Uint64::one(), Uint64::from(2_u64)],
                         recipients: vec![
                             String::from(Addr::unchecked(WINNER_1)),
                             String::from(Addr::unchecked(WINNER_2)),
@@ -446,12 +451,12 @@ mod tests {
                 .unwrap();
             assert_eq!(winner1_cw20_balance.balance.u128(), 180);
             assert_eq!(winner2_cw20_balance.balance.u128(), 100);
-            assert_eq!(campaign.total_available_assets, 17);
-            assert_eq!(campaign.assets.get(0).unwrap().available_amount, 1);
-            assert_eq!(campaign.assets.get(1).unwrap().available_amount, 0);
-            assert_eq!(campaign.assets.get(2).unwrap().available_amount, 0);
-            assert_eq!(campaign.assets.get(3).unwrap().available_amount, 1);
-            assert_eq!(campaign.assets.get(4).unwrap().available_amount, 15);
+            assert_eq!(campaign.total_available_assets.u128(), 17);
+            assert_eq!(campaign.assets.get(0).unwrap().available_amount.u128(), 1);
+            assert_eq!(campaign.assets.get(1).unwrap().available_amount.u128(), 0);
+            assert_eq!(campaign.assets.get(2).unwrap().available_amount.u128(), 0);
+            assert_eq!(campaign.assets.get(3).unwrap().available_amount.u128(), 1);
+            assert_eq!(campaign.assets.get(4).unwrap().available_amount.u128(), 15);
 
             /* ================= Airdrop CW721 and CW1155 assets ================= */
             blockchain
@@ -460,7 +465,11 @@ mod tests {
                     airdrop_address.clone(),
                     &ExecuteMsg::Airdrop {
                         campaign_id: String::from(CAMPAIGN_ID),
-                        asset_indexes: vec![0, 3, 4],
+                        asset_indexes: vec![
+                            Uint64::zero(),
+                            Uint64::from(3_u64),
+                            Uint64::from(4_u64),
+                        ],
                         recipients: vec![
                             String::from(Addr::unchecked(WINNER_1)),
                             String::from(Addr::unchecked(WINNER_2)),

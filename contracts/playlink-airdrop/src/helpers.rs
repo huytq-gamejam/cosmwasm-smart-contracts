@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128, Uint64};
 
 pub const NATIVE_DENOM: &str = "flavor";
 
@@ -17,7 +17,7 @@ pub struct Asset {
     pub asset_type: AssetType,
     pub asset_address: Addr,
     pub asset_id: String,
-    pub available_amount: u128,
+    pub available_amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
@@ -25,8 +25,8 @@ pub struct AirdropCampaign {
     pub campaign_id: String,
     pub creator: Addr,
     pub assets: Vec<Asset>,
-    pub max_batch_size: u64,
-    pub starting_time: u64,
-    pub total_available_assets: u128,
-    pub airdrop_fee: u128,
+    pub max_batch_size: Uint64,
+    pub starting_time: Uint64,
+    pub total_available_assets: Uint128,
+    pub airdrop_fee: Uint128,
 }

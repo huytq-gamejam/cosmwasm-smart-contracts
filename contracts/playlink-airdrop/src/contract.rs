@@ -1,7 +1,7 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::{
     coins, entry_point, to_binary, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    StdResult, SubMsg, Uint128, Uint64, WasmMsg,
 };
 use cw1155::Cw1155ExecuteMsg;
 use cw2::set_contract_version;
@@ -27,7 +27,7 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, PlaylinkAirdropErr> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    if msg.max_batch_size == 0 {
+    if msg.max_batch_size.u64() == 0 {
         return Err(PlaylinkAirdropErr::InvalidMaxBatchSize {
             size: msg.max_batch_size,
         });
@@ -113,14 +113,14 @@ pub mod execute {
     pub fn set_max_batch_size(
         deps: DepsMut,
         info: MessageInfo,
-        new_size: u64,
+        new_size: Uint64,
     ) -> Result<Response, PlaylinkAirdropErr> {
         if !OPERATORS.load(deps.storage, info.sender.clone())? {
             return Err(PlaylinkAirdropErr::NotOperator {
                 account: info.sender.into(),
             });
         }
-        if new_size == 0 {
+        if new_size.u64() == 0 {
             return Err(PlaylinkAirdropErr::InvalidMaxBatchSize { size: new_size });
         }
         AIRDROP_PLATFORM.update(
@@ -136,7 +136,7 @@ pub mod execute {
     pub fn set_fee_per_batch(
         deps: DepsMut,
         info: MessageInfo,
-        new_fee: u128,
+        new_fee: Uint128,
     ) -> Result<Response, PlaylinkAirdropErr> {
         if !OPERATORS.load(deps.storage, info.sender.clone())? {
             return Err(PlaylinkAirdropErr::NotOperator {
@@ -159,7 +159,7 @@ pub mod execute {
         info: MessageInfo,
         campaign_id: String,
         assets: Vec<Asset>,
-        starting_time: u64,
+        starting_time: Uint64,
     ) -> Result<Response, PlaylinkAirdropErr> {
         // Check if campaign exists
         if ALL_CAMPAIGNS.has(deps.storage, campaign_id.clone()) {
@@ -167,15 +167,15 @@ pub mod execute {
         }
 
         // Check payment
-        let airdrop_fee = estimate_airdrop_fee(deps.as_ref(), assets.len() as u64)?;
-        let mut payment = 0;
+        let airdrop_fee = estimate_airdrop_fee(deps.as_ref(), Uint64::from(assets.len() as u64))?;
+        let mut payment = Uint128::zero();
         let mut messages: Vec<SubMsg> = vec![];
         match info
             .funds
             .iter()
             .find(|c| c.denom == String::from(NATIVE_DENOM))
         {
-            Some(coin) => payment = coin.amount.u128(),
+            Some(coin) => payment += coin.amount,
             _ => (),
         }
         if payment < airdrop_fee {
@@ -187,16 +187,16 @@ pub mod execute {
             // Return excess
             messages.push(SubMsg::new(BankMsg::Send {
                 to_address: info.sender.clone().into(),
-                amount: coins(payment - airdrop_fee, NATIVE_DENOM),
+                amount: coins((payment - airdrop_fee).u128(), NATIVE_DENOM),
             }));
         }
 
         // Validate data
-        if env.block.time.seconds() >= starting_time {
+        if env.block.time.seconds() >= starting_time.u64() {
             return Err(PlaylinkAirdropErr::LowStartingTime {});
         }
         for asset in assets.iter() {
-            if asset.asset_type as u8 > 2 {
+            if asset.clone().asset_type as u8 > 2 {
                 return Err(PlaylinkAirdropErr::InvalidAssetType {
                     asset_type: asset.asset_type.clone(),
                 });
@@ -206,7 +206,7 @@ pub mod execute {
                     asset_id: asset.asset_id.clone(),
                 });
             }
-            if asset.asset_type == AssetType::CW721 && asset.available_amount != 1 {
+            if asset.asset_type == AssetType::CW721 && asset.available_amount.u128() != 1 {
                 return Err(PlaylinkAirdropErr::InvalidAssetAmount {
                     asset_amount: asset.available_amount,
                 });
@@ -240,7 +240,7 @@ pub mod execute {
         info: MessageInfo,
         campaign_id: String,
         assets: Vec<Asset>,
-        starting_time: u64,
+        starting_time: Uint64,
     ) -> Result<Response, PlaylinkAirdropErr> {
         // Make sure that this campaign exists
         if !ALL_CAMPAIGNS.has(deps.storage, campaign_id.clone()) {
@@ -256,22 +256,23 @@ pub mod execute {
         }
 
         // Make sure that this campaign has not started yet
-        if env.block.time.seconds() >= campaign.starting_time {
+        if env.block.time.seconds() >= campaign.starting_time.u64() {
             return Err(PlaylinkAirdropErr::UpdateNotAllowed {
                 starting_time: campaign.starting_time,
             });
         }
 
         // Check payment
-        let new_airdrop_fee = estimate_airdrop_fee(deps.as_ref(), assets.len() as u64)?;
-        let mut payment = 0;
+        let new_airdrop_fee =
+            estimate_airdrop_fee(deps.as_ref(), Uint64::from(assets.len() as u64))?;
+        let mut payment = Uint128::zero();
         let mut messages: Vec<SubMsg> = vec![];
         match info
             .funds
             .iter()
             .find(|c| c.denom == String::from(NATIVE_DENOM))
         {
-            Some(coin) => payment += coin.amount.u128(),
+            Some(coin) => payment += coin.amount,
             _ => (),
         }
         if new_airdrop_fee > campaign.airdrop_fee {
@@ -285,7 +286,7 @@ pub mod execute {
                 messages.push(SubMsg::new(BankMsg::Send {
                     to_address: info.sender.clone().into(),
                     amount: coins(
-                        payment + campaign.airdrop_fee - new_airdrop_fee,
+                        (payment + campaign.airdrop_fee - new_airdrop_fee).u128(),
                         NATIVE_DENOM,
                     ),
                 }));
@@ -293,11 +294,11 @@ pub mod execute {
         }
 
         // Validate data
-        if env.block.time.seconds() >= starting_time {
+        if env.block.time.seconds() >= starting_time.u64() {
             return Err(PlaylinkAirdropErr::LowStartingTime {});
         }
         for asset in assets.iter() {
-            if asset.asset_type as u8 > 2 {
+            if asset.clone().asset_type as u8 > 2 {
                 return Err(PlaylinkAirdropErr::InvalidAssetType {
                     asset_type: asset.asset_type.clone(),
                 });
@@ -307,7 +308,7 @@ pub mod execute {
                     asset_id: asset.asset_id.clone(),
                 });
             }
-            if asset.asset_type == AssetType::CW721 && asset.available_amount != 1 {
+            if asset.asset_type == AssetType::CW721 && asset.available_amount.u128() != 1 {
                 return Err(PlaylinkAirdropErr::InvalidAssetAmount {
                     asset_amount: asset.available_amount,
                 });
@@ -340,7 +341,7 @@ pub mod execute {
         env: Env,
         info: MessageInfo,
         campaign_id: String,
-        asset_indexes: Vec<u64>,
+        asset_indexes: Vec<Uint64>,
         recipients: Vec<String>,
     ) -> Result<Response, PlaylinkAirdropErr> {
         // Only operators can airdrop
@@ -357,7 +358,7 @@ pub mod execute {
         let mut campaign = ALL_CAMPAIGNS.load(deps.storage, campaign_id.clone())?;
 
         // Make sure that this campaign has started
-        if env.block.time.seconds() < campaign.starting_time {
+        if env.block.time.seconds() < campaign.starting_time.u64() {
             return Err(PlaylinkAirdropErr::CampaignNotStarts { campaign_id });
         }
 
@@ -365,21 +366,21 @@ pub mod execute {
         if asset_indexes.len() != recipients.len() {
             return Err(PlaylinkAirdropErr::LengthMismatch {});
         }
-        if asset_indexes.len() as u64 > campaign.max_batch_size {
+        if asset_indexes.len() as u64 > campaign.max_batch_size.u64() {
             return Err(PlaylinkAirdropErr::TooManyAssetsAirdropped {
-                num_assets: asset_indexes.len() as u64,
+                num_assets: Uint64::from(asset_indexes.len() as u64),
             });
         }
 
         // Airdrop
         let mut messages: Vec<SubMsg> = vec![];
         for (i, asset_index) in asset_indexes.iter().enumerate() {
-            if *asset_index as usize >= campaign.assets.len() {
+            if asset_index.u64() as usize >= campaign.assets.len() {
                 return Err(PlaylinkAirdropErr::IndexOutOfBound {
                     index: *asset_index,
                 });
             }
-            let asset = campaign.assets.get_mut(*asset_index as usize).unwrap();
+            let asset = campaign.assets.get_mut(asset_index.u64() as usize).unwrap();
             let recipient = deps
                 .api
                 .addr_validate(recipients.get(i).unwrap().as_str())?
@@ -427,11 +428,11 @@ pub mod execute {
                 }
             }
             campaign.total_available_assets -= asset.available_amount;
-            asset.available_amount = 0;
+            asset.available_amount = Uint128::zero();
         }
 
         // Update status or remove
-        if campaign.total_available_assets > 0 {
+        if campaign.total_available_assets.u128() > 0 {
             ALL_CAMPAIGNS.save(deps.storage, campaign_id, &campaign)?;
         } else {
             ALL_CAMPAIGNS.remove(deps.storage, campaign_id);
@@ -484,10 +485,10 @@ pub mod query {
         return ALL_CAMPAIGNS.load(deps.storage, campaign_id);
     }
 
-    pub fn estimate_airdrop_fee(deps: Deps, num_assets: u64) -> StdResult<u128> {
+    pub fn estimate_airdrop_fee(deps: Deps, num_assets: Uint64) -> StdResult<Uint128> {
         let platform = AIRDROP_PLATFORM.load(deps.storage)?;
         let num_required_batches =
-            (num_assets + platform.max_match_size - 1) / platform.max_match_size;
-        Ok(num_required_batches as u128 * platform.fee_per_batch)
+            (num_assets + platform.max_match_size - Uint64::one()) / platform.max_match_size;
+        Ok(Uint128::from(num_required_batches) * platform.fee_per_batch)
     }
 }

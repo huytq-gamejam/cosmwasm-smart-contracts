@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{StdError, Uint128, Uint64};
 use thiserror::Error;
 
 use crate::helpers::AssetType;
@@ -24,7 +24,7 @@ pub enum PlaylinkAirdropErr {
     CampaignAlreadyCreated { campaign_id: String },
 
     #[error("PlaylinkAirdrop: insuffient airdrop fee (required {fee:?} {denom:?})")]
-    InsufficientAirdropFee { fee: u128, denom: String },
+    InsufficientAirdropFee { fee: Uint128, denom: String },
 
     #[error("PlaylinkAirdrop: starting time too low")]
     LowStartingTime {},
@@ -36,7 +36,7 @@ pub enum PlaylinkAirdropErr {
     InvalidAssetId { asset_id: String },
 
     #[error("PlaylinkAirdrop: invalid CW721 amount ({asset_amount:?})")]
-    InvalidAssetAmount { asset_amount: u128 },
+    InvalidAssetAmount { asset_amount: Uint128 },
 
     #[error("PlaylinkAirdrop: campaign does not exist ({campaign_id:?})")]
     CampaignNotExists { campaign_id: String },
@@ -45,17 +45,17 @@ pub enum PlaylinkAirdropErr {
     NotCampaignCreator { campaign_creator: String },
 
     #[error("PlaylinkAirdrop: campaign started, cannot update campaign")]
-    UpdateNotAllowed { starting_time: u64 },
+    UpdateNotAllowed { starting_time: Uint64 },
 
     #[error("PlaylinkAirdrop: campaign not start yet ({campaign_id:?})")]
     CampaignNotStarts { campaign_id: String },
 
     #[error("PlaylinkAirdrop: too many assets airdropped ({num_assets:?})")]
-    TooManyAssetsAirdropped { num_assets: u64 },
+    TooManyAssetsAirdropped { num_assets: Uint64 },
 
     #[error("PlaylinkAirdrop: index out of bound ({index:?})")]
-    IndexOutOfBound { index: u64 },
+    IndexOutOfBound { index: Uint64 },
 
     #[error("PlaylinkAirdrop: batch size ({size:?}) must be greater than zero")]
-    InvalidMaxBatchSize { size: u64 },
+    InvalidMaxBatchSize { size: Uint64 },
 }
