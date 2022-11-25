@@ -1,11 +1,4 @@
 {
-	"malaga": {
-		"playlink_airdrop": "wasm1vlyhkcn63dh4egvpafdgm5ssydd2z3u5ddk20rvlw3049jqqptzshm8s8w"
-	},
-	"juno": {
-		"playlink_airdrop": "juno1rvuyzqn4qnj2rrhk3ef4j4ka3wzz9ged6x58m29h62tr7ehz6z4qfwysdl",
-		"cw20_token": "juno1xreda2xzd43t0wh2emqv7v30kgtydr0gy36900p7mvx83a7pfenq5mc6xw",
-		"cw721_token": "juno1r0ahgppzcdmnxj3535pud2ez3av24rt3gq6xw7r6lnk8psmsq6hqa56mcz",
-		"cw1155_token": "juno1xlxjz52zg9g7w7zwnxf2qgep8v7hn8dgqtk8gtcmrk740qju2t4q34m4uh"
-	}
+	"malaga": {},
+	"juno": {}
 }

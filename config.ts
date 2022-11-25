@@ -2,7 +2,7 @@ import { GasPrice } from '@cosmjs/stargate';
 
 export interface NetworkConfig {
   readonly name: string;
-  readonly httpUrl: string;
+  readonly rpc: string;
   readonly networkId: string;
   readonly feeToken: string;
   readonly bech32prefix: string;
@@ -18,7 +18,7 @@ export interface NetworkConfig {
 export const NETWORKS: NetworkConfig[] = [
   {
     name: "malaga",
-    httpUrl: 'https://rpc.malaga-420.cosmwasm.com',
+    rpc: 'https://rpc.malaga-420.cosmwasm.com',
     networkId: 'malaga-420',
     bech32prefix: 'wasm',
     feeToken: 'umlg',
@@ -32,7 +32,7 @@ export const NETWORKS: NetworkConfig[] = [
   },
   {
     name: "juno",
-    httpUrl: 'https://rpc.uni.juno.deuslabs.fi',
+    rpc: 'https://rpc.uni.juno.deuslabs.fi',
     networkId: 'uni-5',
     bech32prefix: 'juno',
     feeToken: 'ujunox',

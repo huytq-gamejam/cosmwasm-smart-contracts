@@ -5,8 +5,8 @@ import contractAddresses from "../../contract-addresses.json";
 
 dotenv.config();
 
-const NETWORK = "juno";
-const ADMIN = "juno10w2pwzxaacsj508ma5ruz5wnhn83tld78z5cjp";
+const NETWORK = "malaga";
+const ADMIN = "wasm10w2pwzxaacsj508ma5ruz5wnhn83tld7mvxkuk";
 
 const CW20_TOKEN = "cw20_token";
 const CW721_TOKEN = "cw721_token";
@@ -45,10 +45,9 @@ let deploy = async () => {
   await compile();
 
   for (const contract of contracts) {
-    let contractAddress = await baseDeploy(contract, NETWORK);
     if (!contractAddresses[NETWORK])
       contractAddresses[NETWORK] = {} as any;
-    contractAddresses[NETWORK][contract.contractName] = contractAddress;
+    contractAddresses[NETWORK][contract.contractName] = await baseDeploy(contract, NETWORK);
   }
 
   fs.writeFileSync("contract-addresses.json", JSON.stringify(contractAddresses, null, "\t"));

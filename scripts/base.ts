@@ -21,7 +21,7 @@ export const initialize = (config: NetworkConfig): Network => {
     config: NetworkConfig
   ): Promise<SigningCosmWasmClient> => {
     const clientOptions = { prefix: config.bech32prefix };
-    return await SigningCosmWasmClient.connectWithSigner(config.httpUrl, wallet, clientOptions);
+    return await SigningCosmWasmClient.connectWithSigner(config.rpc, wallet, clientOptions);
   };
 
   const hitFaucet = async (

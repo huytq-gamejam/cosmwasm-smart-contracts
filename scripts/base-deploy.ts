@@ -15,8 +15,12 @@ export type ContractInfo = {
   initParams: JsonObject;
 };
 
+export type DeployResult = {
+  codeId: number,
+  address: String;
+};
+
 export const compile = async () => {
-  let compileResult = execSync("cargo wasm");
   let optimizeResult = execSync(
     `sudo docker run --rm -v "$(pwd)":/code \\
       --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \\
@@ -25,7 +29,7 @@ export const compile = async () => {
   ).toString();
 };
 
-export const baseDeploy = async (info: ContractInfo, network: string): Promise<string> => {
+export const baseDeploy = async (info: ContractInfo, network: string): Promise<DeployResult> => {
 
   // Validate network
   let networkConfig = NETWORKS.find(n => n.name === network);
@@ -44,7 +48,7 @@ export const baseDeploy = async (info: ContractInfo, network: string): Promise<s
   let wasmPath = `artifacts/${info.contractName}-aarch64.wasm`;
   if (!fs.existsSync(wasmPath)) {
     console.error(`Unknown contract: ${info.contractName}`);
-    return "";
+    return { codeId: 0, address: "" };
   }
 
   // Upload wasm binary
@@ -63,5 +67,8 @@ export const baseDeploy = async (info: ContractInfo, network: string): Promise<s
   );
   console.log(`${info.contractName}: ${instantiateResponse.contractAddress}`);
 
-  return instantiateResponse.contractAddress;
+  return {
+    codeId: uploadResult.codeId,
+    address: instantiateResponse.contractAddress
+  };
 };
